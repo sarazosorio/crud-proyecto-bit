@@ -14,14 +14,16 @@ const SolicitudSchema = mongoose.Schema({
         required: true
     },
     empresa: {
-        type: String
+        type: String,
+        default: ''
     },
     servicio: {
         type: String,
         required: true
     },
     mensaje: {
-        type: String
+        type: String,
+        default: ''
     },
     estado: {
         type: String,
