@@ -1,103 +1,123 @@
-const Solicitud = require('../models/Solicitud');
+const nodemailer = require('nodemailer');
 
-// Crear una nueva solicitud
-exports.crearSolicitud = async(req, res) => {
+exports.enviarCorreo = async(req, res) => {
     try {
-        const { nombreCliente, email, servicio, empresa, mensaje, estado } = req.body;
+        const { nombreCliente, email, empresa, servicio, mensaje } = req.body;
 
-        if (!nombreCliente || !email || !servicio) {
+        if (!nombreCliente || !email || !servicio || !mensaje) {
             return res.status(400).json({ msg: 'Faltan campos requeridos' });
         }
 
-        const nuevaSolicitud = new Solicitud({
-            nombreCliente,
-            email,
-            servicio,
-            empresa: empresa || '',
-            mensaje: mensaje || '',
-            estado: estado || 'nuevo'
+        // 🔐 CONFIGURAR TU CORREO (GMAIL EJEMPLO)
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER, // tu correo
+                pass: process.env.EMAIL_PASS // contraseña de aplicación
+            }
         });
 
-        await nuevaSolicitud.save();
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER, // te llega a ti mismo
+            subject: 'Solicitud de ClickPrime',
+            html: `
+                <div style="
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #ffe4f1, #fff0f6);
+        padding: 30px;
+    ">
 
-        // Devolver la lista completa de solicitudes después de crear la nueva
-        const solicitudesActualizadas = await Solicitud.find().sort({ fecha: -1 });
+        <div style="
+            max-width: 620px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.25);
+            border: 1px solid #ffd1e8;
+        ">
+         <!-- LOGO -->
+            <div style="text-align:center; padding: 20px; background:#fff;">
+                <img 
+                    src="https://res.cloudinary.com/divubamzo/image/upload/v1777769054/logo_jc3ise.png"
+                    alt="Logo"
+                    style="max-width: 140px; border-radius: 10px;"
+                />
+            </div>
 
-        res.status(201).json({
-            msg: 'Solicitud creada correctamente',
-            solicitud: nuevaSolicitud,
-            solicitudes: solicitudesActualizadas
-        });
+            <!-- HEADER -->
+            <div style="
+                background: linear-gradient(90deg, #ff4fa3, #ff85c1);
+                color: white;
+                text-align: center;
+                padding: 20px;
+                font-size: 22px;
+                font-weight: bold;
+                letter-spacing: 1px;
+            ">
+                 Nueva Solicitud Recibida 
+            </div>
+
+            <!-- BODY -->
+            <div style="padding: 25px; color: #333;">
+
+                <p style="font-size: 16px;">
+                    ✨ Has recibido una nueva solicitud desde tu formulario web.
+                </p>
+
+                <div style="
+                    margin-top: 15px;
+                    padding: 15px;
+                    border-radius: 12px;
+                    background: #fff5fa;
+                    border-left: 5px solid #ff69b4;
+                ">
+                    <p><strong>👤 Nombre:</strong> ${nombreCliente}</p>
+                    <p><strong>📧 Email:</strong> ${email}</p>
+                    <p><strong>🏢 Empresa:</strong> ${empresa || '-'}</p>
+                    <p><strong>💻Servicio:</strong> ${servicio}</p>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <p style="font-weight: bold; color: #ff4fa3;">💬 Mensaje:</p>
+
+                    <div style="
+                        background: #fff0f6;
+                        padding: 15px;
+                        border-radius: 12px;
+                        font-style: italic;
+                        color: #444;
+                        border: 1px solid #ffd1e8;
+                    ">
+                        ${mensaje}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div style="
+                text-align: center;
+                padding: 12px;
+                font-size: 12px;
+                color: #999;
+                background: #fafafa;
+            ">
+                    2026
+            </div>
+
+        </div>
+    </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({ msg: 'Correo enviado correctamente' });
+
     } catch (error) {
-        console.error('Error al crear solicitud:', error);
-        res.status(500).json({ msg: 'Error interno del servidor' });
-    }
-};
-
-// Obtener todas las solicitudes
-exports.obtenerSolicitudes = async(req, res) => {
-    try {
-        const solicitudes = await Solicitud.find().sort({ fecha: -1 });
-        res.json(solicitudes);
-    } catch (error) {
-        console.error('Error al obtener solicitudes:', error);
-        res.status(500).json({ msg: 'Error interno del servidor' });
-    }
-};
-
-// Actualizar solicitud
-exports.actualizarSolicitud = async(req, res) => {
-    try {
-        const { nombreCliente, email, empresa, servicio, mensaje, estado } = req.body;
-
-        const solicitud = await Solicitud.findById(req.params.id);
-        if (!solicitud) {
-            return res.status(404).json({ msg: 'Solicitud no encontrada' });
-        }
-
-        // Actualizar solo los campos enviados
-        solicitud.nombreCliente = nombreCliente || solicitud.nombreCliente;
-        solicitud.email = email || solicitud.email;
-        solicitud.empresa = empresa || solicitud.empresa;
-        solicitud.servicio = servicio || solicitud.servicio;
-        solicitud.mensaje = mensaje || solicitud.mensaje;
-        solicitud.estado = estado || solicitud.estado;
-
-        await solicitud.save();
-
-        // Devolver todas las solicitudes actualizadas
-        const solicitudesActualizadas = await Solicitud.find().sort({ fecha: -1 });
-
-        res.json({
-            msg: 'Solicitud actualizada correctamente',
-            solicitud,
-            solicitudes: solicitudesActualizadas
-        });
-    } catch (error) {
-        console.error('Error al actualizar solicitud:', error);
-        res.status(500).json({ msg: 'Error interno del servidor' });
-    }
-};
-
-// Eliminar solicitud
-exports.eliminarSolicitud = async(req, res) => {
-    try {
-        const solicitud = await Solicitud.findById(req.params.id);
-        if (!solicitud) {
-            return res.status(404).json({ msg: 'Solicitud no encontrada' });
-        }
-
-        await Solicitud.findByIdAndDelete(req.params.id);
-
-        // Devolver todas las solicitudes después de eliminar
-        const solicitudesActualizadas = await Solicitud.find().sort({ fecha: -1 });
-
-        res.json({
-            msg: 'Solicitud eliminada',
-            solicitudes: solicitudesActualizadas
-        });
-    } catch (error) {
-        console.error('Error al eliminar solicitud:', error);
-        res.status(500).json({ msg: 'Error interno del servidor' });
+        console.error('Error enviando correo:', error);
+        res.status(500).json({ msg: 'Error al enviar correo' });
     }
 };

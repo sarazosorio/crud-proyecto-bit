@@ -5,6 +5,7 @@ const app = require('./app.js')
 const port = 3000
 
 //conectarDB()
+
 async function start() {
     await conectarDB()
 
@@ -12,5 +13,7 @@ async function start() {
         console.log('Servidor escuchando en el puerto ' + port)
     })
 }
+
+
 
 start()

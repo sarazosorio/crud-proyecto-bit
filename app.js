@@ -9,12 +9,13 @@ const app = express();
 
 
 app.use(cors({
-    origin: 'https://frontend-proyecto-bit.vercel.app/', // o '*' temporal para pruebas
+    // origin: 'https://frontend-proyecto-bit.vercel.app/', // o '*' temporal para pruebas
+    origin: '*'
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
 
-app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
+// app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 app.use('/api', router);
 
 app.get('/', (req, res) => {
